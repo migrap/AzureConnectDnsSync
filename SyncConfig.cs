@@ -2,9 +2,9 @@
 
 namespace AzureConnectDnsSync {
     internal class SyncConfig : ISyncConfig {
-        public TimeSpan Every { get; set; }
+        public string OnPremiseDnsServer { get; set; }
 
-        public string Azure { get; set; }
+        public TimeSpan Every { get; set; }
 
         public string Local { get; set; }
 
@@ -13,9 +13,9 @@ namespace AzureConnectDnsSync {
         public SyncConfig() {
         }
 
-        public SyncConfig(TimeSpan every, string azure, string local, bool force) {
+        public SyncConfig(string onPremiseDnsServer, TimeSpan every, string local, bool force) {
+            OnPremiseDnsServer = onPremiseDnsServer;
             Every = every;
-            Azure = azure;
             Local = local;
             Force = force;
         }

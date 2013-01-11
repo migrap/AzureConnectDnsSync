@@ -3,17 +3,17 @@ using System.Configuration;
 
 namespace AzureConnectDnsSync.Configuration {
     public class SyncSection : ConfigurationSection {
+        [ConfigurationProperty("OnPremiseDnsServer", IsRequired = true)]
+        public string OnPremiseDnsServer {
+            get { return (string)base["OnPremiseDnsServer"]; }
+            set { base["OnPremiseDnsServer"] = value; }
+        }
+
         [ConfigurationProperty("Every", DefaultValue = "00:00:30", IsRequired = false)]
         public TimeSpan Every {
             get { return (TimeSpan)base["Every"]; }
             set { base["Every"] = value; }
-        }
-
-        [ConfigurationProperty("Azure", DefaultValue = "Windows Azure Connect Relay", IsRequired = false)]
-        public string Azure {
-            get { return (string)base["Azure"]; }
-            set { base["Azure"] = value; }
-        }
+        }        
 
         [ConfigurationProperty("Local", DefaultValue = "Local Area Connection", IsRequired = false)]
         public string Local {

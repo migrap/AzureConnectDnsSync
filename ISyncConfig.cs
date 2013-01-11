@@ -2,8 +2,8 @@
 
 namespace AzureConnectDnsSync {
     internal interface ISyncConfig {
-        TimeSpan Every { get; set; }
-        string Azure { get; set; }
+        string OnPremiseDnsServer { get; set; }
+        TimeSpan Every { get; set; }        
         string Local { get; set; }
         bool Force { get; set; }
     }

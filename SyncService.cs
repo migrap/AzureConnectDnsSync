@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 namespace AzureConnectDnsSync {
     internal class SyncService : ISyncService {
@@ -24,25 +26,35 @@ namespace AzureConnectDnsSync {
 
         private void Run() {
             this.Log().Info(() => string.Format("Running {0}", typeof(SyncService).Name));
-
-            var nia = NetworkInterface.GetAllNetworkInterfaces().Where(ni => ni.OperationalStatus == OperationalStatus.Up && ni.Supports(NetworkInterfaceComponent.IPv6)).ToArray();
-            var pppPredicate = new Func<NetworkInterface,bool>(ni => ni.NetworkInterfaceType == NetworkInterfaceType.Ppp && ni.Name.StartsWith(_conf.Azure));
-            var lanPredicate = new Func<NetworkInterface,bool>(ni => ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet && ni.Name.StartsWith(_conf.Local));
-
-            if (false == nia.Any(pppPredicate)) {
-                this.Log().Info(() => string.Format("Unable to find matching Azure connection {0}", _conf.Azure));
-                return;
-            }
+                       
+            
+            var nia = NetworkInterface.GetAllNetworkInterfaces().Where(ni => ni.OperationalStatus == OperationalStatus.Up && ni.Supports(NetworkInterfaceComponent.IPv6)).ToArray();            
+            var lanPredicate = new Func<NetworkInterface,bool>(ni => ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet && ni.Name.StartsWith(_conf.Local));            
 
             if (false == nia.Any(lanPredicate)) {
-                this.Log().Info(() => string.Format("Unable to find matching Local connection {0}", _conf.Azure));
+                this.Log().Info(() => string.Format("Unable to find matching Local connection {0}", _conf.Local));
                 return;
             }
 
-            var ppp = nia.Where(pppPredicate).First();
+            var ping = new Ping();
+            var reply = default(PingReply);
+            try {
+                reply = ping.Send(_conf.OnPremiseDnsServer);
+            }
+            catch {                
+            }
+
+            if (null == reply || reply.Status != IPStatus.Success) {
+                this.Log().Info(() => string.Format("Unable to ping on-premise DNS server {0}", _conf.OnPremiseDnsServer));
+                return;
+            }
+            else if (reply.Address.AddressFamily != AddressFamily.InterNetworkV6) {
+                this.Log().Info(() => string.Format("Unable to resolve an IPv6 address for on-premise DNS server {0}", _conf.OnPremiseDnsServer));
+            }
+
             var lan = nia.Where(lanPredicate).First();
 
-            var address = ppp.GetIPProperties().UnicastAddresses[0].Address;
+            var address = reply.Address;
 
             if ((_conf.Force) || (false == lan.GetIPProperties().DnsAddresses.Contains(address))) {
                 var psi = new ProcessStartInfo() {
